@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+websockets
+pymilvus
+groq
+python-dotenv
+pydantic
+pyngrok
+nest-asyncio
+tqdm
