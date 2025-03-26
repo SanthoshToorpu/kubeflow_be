@@ -10,6 +10,7 @@ import re
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -309,7 +310,32 @@ async def generate_llm_response(query: str, conversation_history: List[Dict[str,
 
 @app.get("/")
 async def root():
-    return {"message": "RAG WebSocket Server running with Groq LLM!"}
+    return {
+        "status": "success",
+        "message": "RAG WebSocket Server is running!",
+        "documentation": {
+            "websocket_endpoint": "/ws",
+            "health_check": "/health",
+            "api_version": "1.0.0"
+        },
+        "system_info": {
+            "llm_model": LLM_MODEL,
+            "vector_store": "Milvus",
+            "embedding_dimension": EMBEDDING_DIM,
+            "status": "healthy"
+        }
+    }
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "services": {
+            "milvus": "connected" if milvus_client else "disconnected",
+            "groq": "connected" if groq_client else "disconnected"
+        }
+    }
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -386,4 +412,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     logger.info("Starting RAG WebSocket server with Groq...")
-    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", 5000)))
+    # Use Azure's WEBSITE_PORT environment variable if available, fallback to .env
+    port = int(os.getenv("WEBSITE_PORT", os.getenv("PORT", 8000)))
+    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"), port=port)
